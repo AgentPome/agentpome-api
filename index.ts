@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.routes";
 const app: Express = express();
 const port = 3000;
 
+// Question: Think about CORS policy here.
 app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
 

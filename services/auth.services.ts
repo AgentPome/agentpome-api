@@ -13,12 +13,16 @@ export const registerUser = async ({ email, password }: RegisterType) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Insert user
+  // Question: Should we check if the user already exists before inserting?
+  // Question: Input Validation Missing , Vulnerable to SQL Injection
   const [user] = await db
     .insert(users)
     .values({ email, password: hashedPassword })
+    // Question: should we return the user object here?
     .returning();
 
   const accessToken = generateAccessToken(user.id);
+  // Bug: Faulty Refresh Token Logic
   const refreshToken = generateRefreshToken(user.id);
 
   await db
@@ -30,6 +34,8 @@ export const registerUser = async ({ email, password }: RegisterType) => {
 };
 
 export const loginUser = async ({ email, password }: LoginType) => {
+  // Question: does this query select the entire columns in the user table to find the user?
+  // Question: Input Validation Missing , Vulnerable to SQL Injection
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
   if (!user) throw new Error("Invalid credentials");
@@ -38,6 +44,7 @@ export const loginUser = async ({ email, password }: LoginType) => {
   if (!validPassword) throw new Error("Invalid credentials");
 
   const accessToken = generateAccessToken(user.id);
+  // Bug: Faulty Refresh Token Logic
   const refreshToken = generateRefreshToken(user.id);
 
   await db
@@ -49,6 +56,8 @@ export const loginUser = async ({ email, password }: LoginType) => {
 };
 
 export const requestPasswordReset = async (email: string) => {
+  // Question: does this query select the entire columns in the user table to find the user?
+  // Question: Input Validation Missing , Vulnerable to SQL Injection
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user) return; // Prevent enumeration
 
@@ -68,8 +77,11 @@ export const resetPassword = async (
   token: string,
   newPassword: string
 ) => {
+  // Question: does this query select the entire columns in the user table to find the user?
+  // Question: Input Validation Missing , Vulnerable to SQL Injection
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
+  // Question: Check if condition logic is correct ?
   if (
     !user ||
     user.resetToken !== token ||
@@ -80,7 +92,7 @@ export const resetPassword = async (
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
-
+  // Question: Think about the refresh token logic here.
   await db
     .update(users)
     .set({
