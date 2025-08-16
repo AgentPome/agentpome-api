@@ -7,7 +7,7 @@ import { sendResetEmail } from "../lib/utils/email";
 import { RegisterType, LoginType } from "../types/auth.types";
 import config from "../config/config";
 import { eq } from "drizzle-orm";
-
+import jwt from "jsonwebtoken";
  
 export const registerUser = async ({ email, password }: RegisterType) => {
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -91,3 +91,47 @@ export const resetPassword = async (
     })
     .where(eq(users.email, email));
 };
+export const getDetailsById = async (userId: string) => {
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return { email: user.email };
+};
+
+export const refreshTokens = async (accessTokenRaw: string, refreshTokenRaw: string) => {
+  try {
+    // Decode userId from refresh token
+    const decoded = jwt.verify(refreshTokenRaw, config.refreshTokenSecret) as any;
+    const userId = decoded?.id;
+
+    if (!userId) {
+      throw new Error("Invalid refresh token payload");
+    }
+
+    // Fetch user and compare refresh token
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) throw new Error("User not found");
+
+    if (user.refreshToken !== refreshTokenRaw) {
+      throw new Error("Refresh token does not match stored token");
+    }
+
+    // Generate new tokens
+    const newAccessToken = generateAccessToken(user.id);
+    const newRefreshToken = generateRefreshToken(user.id);
+
+    // Save new refresh token (rotation)
+    await db
+      .update(users)
+      .set({ refreshToken: newRefreshToken, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+  } catch (err) {
+    throw new Error("Invalid or expired refresh token");
+  }
+};
+
