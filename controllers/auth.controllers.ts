@@ -83,3 +83,49 @@ export async function refresh(req: Request, res: Response) {
 }
 
 
+export async function changePassword(req: Request, res: Response) {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Authorization token missing" });
+    }
+
+    const oldPassword = req.body["old-password"] ?? req.body.oldPassword;
+    const newPassword = req.body["new-password"] ?? req.body.newPassword;
+
+    if (!oldPassword || !newPassword) {
+      return res
+        .status(400)
+        .json({ error: "old-password and new-password are required" });
+    }
+
+    const { accessToken, refreshToken } = await AuthService.changePassword(
+      userId,
+      oldPassword,
+      newPassword
+    );
+
+    return res
+      .status(200)
+      .set("Authorization", `Bearer ${accessToken}`)
+      .set("X-Refresh-Token", refreshToken)
+      .json({ pome_code: "success", message: "Password updated successfully" });
+  } catch (err) {
+    return res.status(400).json({ error: (err as Error).message });
+  }
+}
+export async function verifyTokenn(req: Request, res: Response) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(400).json({ error: "Authorization header missing" });
+    }
+
+    const token = authHeader.split(" ")[1];
+    const result = await AuthService.validateToken(token);
+
+    return res.status(200).json({ pome_code: "success", ...result });
+  } catch (err) {
+    return res.status(401).json({ error: (err as Error).message, valid: false });
+  }
+}

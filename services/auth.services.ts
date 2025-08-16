@@ -135,3 +135,49 @@ export const refreshTokens = async (accessTokenRaw: string, refreshTokenRaw: str
   }
 };
 
+export const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+) => {
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  if (!user) throw new Error("User not found");
+
+  const valid = await bcrypt.compare(oldPassword, user.password);
+  if (!valid) throw new Error("Invalid current password");
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  const newRefreshToken = generateRefreshToken(user.id);
+  const newAccessToken = generateAccessToken(user.id);
+
+  await db
+    .update(users)
+    .set({
+      password: hashedPassword,
+      refreshToken: newRefreshToken,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, user.id));
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+};
+export const validateToken = async (accessTokenRaw: string) => {
+  try {
+    // Verify token
+    const decoded = jwt.verify(accessTokenRaw, config.jwtSecret) as any;
+    const userId = decoded?.id ?? decoded?.userId;
+
+    if (!userId) {
+      throw new Error("Invalid token payload");
+    }
+
+    // Fetch user from DB
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) throw new Error("User not found or inactive");
+
+    return { valid: true };
+  } catch (err) {
+    throw new Error("Invalid or expired token");
+  }
+};
