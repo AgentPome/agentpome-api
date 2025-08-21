@@ -14,11 +14,19 @@ export const registerUser = async ({ email, password }: RegisterType) => {
 
   // Insert user
   // Question: Should we check if the user already exists before inserting?
-  // Question: Input Validation Missing , Vulnerable to SQL Injection
+  // Answer: Yes, we should check , if we skip this step we'll be endup with
+  // duplicate entries in the DB which can cause login problems and errors.
+
+  // Question: Input Validation Missing , Vulnerable to SQL Injection?
+  // Answer: Yes, Input validation is missing . Here the user can enter anything 
+  // they want and the data has been stored directly without any validation/sanitation
+  // which can be vulnerable to sql-injection.
   const [user] = await db
     .insert(users)
     .values({ email, password: hashedPassword })
     // Question: should we return the user object here?
+    // Answer: It is not mandatory bu t we can have that return option by returning the non-sensitive datas like name , email. 
+
     .returning();
 
   const accessToken = generateAccessToken(user.id);
@@ -35,6 +43,8 @@ export const registerUser = async ({ email, password }: RegisterType) => {
 
 export const loginUser = async ({ email, password }: LoginType) => {
   // Question: does this query select the entire columns in the user table to find the user?
+  // Yes, the query will return all the columns , to optimize we can spcify the columns as per our needs
+  
   // Question: Input Validation Missing , Vulnerable to SQL Injection
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
