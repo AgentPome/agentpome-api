@@ -8,7 +8,7 @@ const app: Express = express();
 const port = 3000;
 
 app.use(express.json());
-app.use("/api/v1/auth", authRoutes);
+// app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");
