@@ -1,14 +1,14 @@
 import express from "express";
 import type { Express, Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
-import serverless from "serverless-http";
+// import serverless from "serverless-http";
 import { db } from "./db/client";
 
 const app: Express = express();
 const port = 3000;
 
 app.use(express.json());
-// app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");
@@ -31,9 +31,9 @@ app.get("/test-db", async (req: Request, res: Response) => {
 });
 
 // Uncomment the following lines to deploy in our custom server
-// app.listen(port, () => {
-//   console.log(`Server is running on http://localhost:${port}`);
-// });
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
 
 // Export the serverless handler
-export default serverless(app);
+// export default serverless(app);
