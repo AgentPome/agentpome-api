@@ -1,8 +1,16 @@
 import jwt from "jsonwebtoken";
 import config from "../../config/config";
 
-export const generateAccessToken = (userId: string) => {
-  return jwt.sign({ id: userId }, config.jwtSecret, { expiresIn: "1h" });
+export interface AccessTokenPayload {
+  id: string;
+  email: string;
+}
+
+export const generateAccessToken = (payload: AccessTokenPayload) => {
+  return jwt.sign({
+    id: payload.id,
+    email: payload.email
+  }, config.jwtSecret, { expiresIn: "1h" });
 };
 
 export const generateRefreshToken = (userId: string) => {

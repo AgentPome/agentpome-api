@@ -9,7 +9,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
+    "typeRoots": [
+      "./types",
+      "./node_modules/@types"
+    ]
   },
-  "include": ["*.ts", "routes/**/*.ts"],
+  "include": ["**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

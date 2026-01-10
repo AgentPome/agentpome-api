@@ -1,6 +1,8 @@
 import express from "express";
 import type { Express, Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
+import agentRoutes from "./routes/agent.routes";
+import deviceRoutes from "./routes/device.routes";
 // import serverless from "serverless-http";
 import { db } from "./db/client";
 
@@ -9,6 +11,9 @@ const port = 3000;
 
 app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/agents", agentRoutes);
+app.use("/api/v1/devices", deviceRoutes);
+
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");

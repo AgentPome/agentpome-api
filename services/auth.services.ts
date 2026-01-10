@@ -4,51 +4,73 @@ import { db } from "../db/client";
 import { users } from "../db/schema";
 import { generateAccessToken, generateRefreshToken } from "../lib/utils/token";
 import { sendResetEmail } from "../lib/utils/email";
-import { RegisterType, LoginType } from "../types/auth.types";
+import { SignupRequestType, LoginRequestType, AuthResponseType } from "../types/auth.types";
 import config from "../config/config";
 import { eq } from "drizzle-orm";
-
+import { UserPlan } from "../types/common.types";
  
-export const registerUser = async ({ email, password }: RegisterType) => {
+export const registerUser = async ({ 
+  email, password 
+}: SignupRequestType): Promise<AuthResponseType> => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Insert user
-  const [user] = await db
-    .insert(users)
-    .values({ email, password: hashedPassword })
-    .returning();
+  try {
+    // Insert user
+    const [user] = await db
+      .insert(users)
+      .values({ 
+        email,
+        password: hashedPassword,
+        plan: UserPlan.FREE
+      })
+      .returning();
 
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
+    const token = generateAccessToken({
+      id: user.id,
+      email: user.email,
+    })
 
-  await db
-    .update(users)
-    .set({ refreshToken })
-    .where(eq(users.id, user.id));
 
-  return { user, accessToken, refreshToken };
+    return { 
+      token, 
+      user: {
+        id: user.id,
+        email: user.email,
+        plan: user.plan as UserPlan,
+      }
+     };
+  } catch (err) {
+    throw new Error("USER_ALREADY_EXISTS");
+  }
+  
 };
 
-export const loginUser = async ({ email, password }: LoginType) => {
+export const loginUser = async ({ 
+  email, password 
+}: LoginRequestType): Promise<AuthResponseType> => {
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
-  if (!user) throw new Error("Invalid credentials");
-
+  if (!user) throw new Error("AUTH_INVALID_CREDENTIALS");
+  
   const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) throw new Error("Invalid credentials");
+  if (!validPassword) throw new Error("AUTH_INVALID_CREDENTIALS");
 
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
+  const token = generateAccessToken({
+    id: user.id,
+    email: user.email
+  })
 
-  await db
-    .update(users)
-    .set({ refreshToken })
-    .where(eq(users.id, user.id));
-
-  return { user, accessToken, refreshToken };
+  return { 
+    token, 
+    user: {
+      id: user.id,
+      email: user.email,
+      plan: user.plan as UserPlan,
+    }
+   };
 };
 
-export const requestPasswordReset = async (email: string) => {
+export const requestPasswordReset = async (email: string): Promise<void> => {
   const [user] = await db.select().from(users).where(eq(users.email, email));
   if (!user) return; // Prevent enumeration
 
@@ -67,7 +89,7 @@ export const resetPassword = async (
   email: string,
   token: string,
   newPassword: string
-) => {
+): Promise<void> => {
   const [user] = await db.select().from(users).where(eq(users.email, email));
 
   if (
@@ -76,7 +98,7 @@ export const resetPassword = async (
     !user.resetExpiresAt ||
     user.resetExpiresAt < new Date()
   ) {
-    throw new Error("Invalid or expired reset token");
+    throw new Error("RESET_TOKEN_INVALID");
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -87,7 +109,6 @@ export const resetPassword = async (
       password: hashedPassword,
       resetToken: null,
       resetExpiresAt: null,
-      refreshToken: null,
     })
     .where(eq(users.email, email));
 };
