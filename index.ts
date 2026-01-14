@@ -11,8 +11,8 @@ const port = 3000;
 
 app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/agents", agentRoutes);
-app.use("/api/v1/devices", deviceRoutes);
+app.use("/api/v1/agent", agentRoutes);
+app.use("/api/v1/device", deviceRoutes);
 
 
 app.get("/", (req: Request, res: Response) => {
