@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { db } from "../db/client";
-import { users } from "../db/schema";
+import { devices, users, wazuhAgents } from "../db/schema";
 import { generateAccessToken, generateRefreshToken } from "../lib/utils/token";
 import { sendResetEmail } from "../lib/utils/email";
 import { SignupRequestType, LoginRequestType, AuthResponseType } from "../types/auth.types";

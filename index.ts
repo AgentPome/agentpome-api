@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import authRoutes from "./routes/auth.routes";
 import agentRoutes from "./routes/agent.routes";
 import deviceRoutes from "./routes/device.routes";
+import bootstrapRoutes from "./routes/bootstrap.routes";
 // import serverless from "serverless-http";
 import { db } from "./db/client";
 
@@ -11,6 +12,7 @@ const port = 3000;
 
 app.use(express.json());
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/bootstrap", bootstrapRoutes);
 app.use("/api/v1/agent", agentRoutes);
 app.use("/api/v1/device", deviceRoutes);
 
