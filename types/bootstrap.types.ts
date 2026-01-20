@@ -15,4 +15,5 @@ export interface BootStrapResponseType {
     userId: UUID;
     deviceId: UUID;
     agentId: UUID;
+    managerIp: string;
 }

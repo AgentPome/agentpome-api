@@ -72,7 +72,8 @@ export async function bootstrap(request: BootStrapRequestType): Promise<BootStra
     return {
         userId,
         deviceId: device.id,
-        agentId: agent.id
+        agentId: agent.id,
+        managerIp: agent.managerIp
     }
 
 }
